@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Tables from "../components/Tables";
+import OrderModal from "../components/modal/OrderModal";
 
 interface OrderItem {
   id: string;
@@ -24,6 +25,7 @@ interface Order {
   total: number;
   createdAt: string;
   updatedAt: string;
+  __v: number;
 }
 
 const Page = () => {
@@ -35,7 +37,7 @@ const Page = () => {
     try {
       setLoading(true);
       const response = await axios.get("/api/orders");
-      const data = response.data.data || response.data; // Depending on your API response shape
+      const data = response.data.data || response.data;
       setOrders(data);
     } catch (err) {
       setError(
@@ -55,29 +57,38 @@ const Page = () => {
       header: "Customer",
       accessor: "customerName" as keyof Order,
       className: "min-w-[180px]",
+      key: "customer-column"
     },
     {
       header: "Items",
       accessor: "items" as keyof Order,
       className: "hidden sm:table-cell text-center min-w-[80px]",
+      key: "items-column"
     },
     {
       header: "Total",
       accessor: "total" as keyof Order,
       className: "text-right min-w-[100px]",
+      key: "total-column"
     },
     {
       header: "Date",
       accessor: "date" as keyof Order,
       className: "hidden md:table-cell min-w-[120px]",
+      key: "date-column"
     },
     {
       header: "Status",
       accessor: "status" as keyof Order,
       className: "hidden lg:table-cell min-w-[100px]",
+      key: "status-column"
     },
-    // Remove the "Action" column if your Table component expects only keys of Order
-    // If you need the "Action" column, you should update the Column type to allow custom accessors
+    {
+      header: "Action",
+      accessor: "_id" as keyof Order,
+      className: "",
+      key: "action-column"
+    },
   ];
 
   const formatDate = (dateString: string) => {
@@ -86,8 +97,8 @@ const Page = () => {
   };
 
   const renderRow = (order: Order) => (
-    <tr key={order._id} className="hover:bg-gray-50">
-      <td className="px-4 py-3">
+    <tr key={`order-${order._id}`} className="hover:bg-gray-50">
+      <td className="px-4 py-3" key={`customer-${order._id}`}>
         <div className="flex flex-col">
           <span className="font-medium text-gray-800">
             {order.customerName}
@@ -95,16 +106,16 @@ const Page = () => {
           <span className="text-sm text-gray-500">{order.customerEmail}</span>
         </div>
       </td>
-      <td className="px-4 py-3 text-center hidden sm:table-cell">
+      <td className="px-4 py-3 text-center hidden sm:table-cell" key={`items-count-${order._id}`}>
         {order.items.length}
       </td>
-      <td className="px-4 py-3 text-right">
+      <td className="px-4 py-3 text-right" key={`total-${order._id}`}>
         Kes {order.total.toFixed(0)}
       </td>
-      <td className="px-4 py-3 hidden md:table-cell">
+      <td className="px-4 py-3 hidden md:table-cell" key={`date-${order._id}`}>
         {formatDate(order.date)}
       </td>
-      <td className="px-4 py-3 hidden lg:table-cell">
+      <td className="px-4 py-3 hidden lg:table-cell" key={`status-${order._id}`}>
         <span
           className={`px-2 py-1 capitalize rounded-full text-xs ${
             order.status === "pending"
@@ -121,19 +132,44 @@ const Page = () => {
           {order.status}
         </span>
       </td>
-      <td className="flex items-center gap-2 px-4 py-3">
-        <button className="px-3 py-1 text-sm text-white bg-blue-500 rounded hover:bg-blue-600">
-          View
-        </button>
-        <button className="px-3 py-1 text-sm text-white bg-red-500 rounded hover:bg-red-600">
-          Delete
-        </button>
+      <td className="flex items-center gap-2 p-4" key={`actions-${order._id}`}>
+        <OrderModal 
+          key={`view-modal-${order._id}`}
+          type="view" 
+          order={order} 
+        />
+
+        {order.status === "pending" && (
+          <>
+            <OrderModal 
+              key={`confirm-modal-${order._id}`}
+              type="confirm" 
+              order={order}  
+              onSuccess={fetchOrders} 
+            />
+            <OrderModal 
+              key={`cancel-modal-${order._id}`}
+              type="cancel" 
+              order={order}  
+              onSuccess={fetchOrders} 
+            />
+          </>
+        )}
+
+        {order.status === "confirmed" && (
+          <OrderModal 
+            key={`ship-modal-${order._id}`}
+            type="ship" 
+            order={order} 
+            onSuccess={fetchOrders} 
+          />
+        )}
       </td>
     </tr>
   );
 
   return (
-    <div className="p-4">
+    <div className="p-4" key="orders-page-container">
       <h1 className="text-2xl font-bold mb-4">Orders</h1>
 
       {loading && <p className="text-gray-500">Loading orders...</p>}
@@ -141,6 +177,7 @@ const Page = () => {
 
       {!loading && !error && (
         <Tables<Order>
+          key="orders-table"
           columns={columns}
           data={orders}
           renderRow={renderRow}
@@ -148,6 +185,4 @@ const Page = () => {
       )}
     </div>
   );
-};
-
-export default Page;
+};export default Page;
