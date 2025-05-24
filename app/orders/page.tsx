@@ -74,13 +74,13 @@ const Page = () => {
     {
       header: "Date",
       accessor: "date" as keyof Order,
-      className: "hidden md:table-cell min-w-[120px]",
+      className: "hidden lg:table-cell min-w-[120px]",
       key: "date-column"
     },
     {
       header: "Status",
       accessor: "status" as keyof Order,
-      className: "hidden lg:table-cell min-w-[100px]",
+      className: "",
       key: "status-column"
     },
     {
@@ -115,7 +115,7 @@ const Page = () => {
       <td className="px-4 py-3 hidden md:table-cell" key={`date-${order._id}`}>
         {formatDate(order.date)}
       </td>
-      <td className="px-4 py-3 hidden lg:table-cell" key={`status-${order._id}`}>
+      <td className="px-4 py-3  sm:table-cell" key={`status-${order._id}`}>
         <span
           className={`px-2 py-1 capitalize rounded-full text-xs ${
             order.status === "pending"
